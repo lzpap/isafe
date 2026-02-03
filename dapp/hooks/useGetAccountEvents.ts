@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKey } from "./queryKey";
 import { useIsafeIndexerClientContext } from "@/contexts";
+import type { IsafeEvent } from "@/lib/clients/IsafeIndexerClient";
+
+export type ParsedEvent = IsafeEvent;
 
 export function useGetAccountEvents(address: string) {
   const indexerClient = useIsafeIndexerClientContext();

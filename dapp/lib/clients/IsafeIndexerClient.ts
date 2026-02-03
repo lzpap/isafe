@@ -149,10 +149,25 @@ export type RawEvent = {
   timestamp: number;
 };
 
+export type EventType =
+  | "AccountCreatedEvent"
+  | "AccountRotatedEvent"
+  | "MemberAddedEvent"
+  | "MemberRemovedEvent"
+  | "MemberWeightUpdatedEvent"
+  | "ThresholdChangedEvent"
+  | "GuardianChangedEvent"
+  | "TransactionProposedEvent"
+  | "TransactionApprovedEvent"
+  | "TransactionApprovalThresholdReachedEvent"
+  | "TransactionApprovalThresholdLostEvent"
+  | "TransactionExecutedEvent"
+  | "TransactionRemovedEvent";
+
 export type IsafeEvent = {
   accountAddress: string;
   firedInTx: string;
-  eventType: string;
+  eventType: EventType;
   data:
     | typeof AccountCreatedEvent.$inferType
     | typeof AccountRotatedEvent.$inferType
