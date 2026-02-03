@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useGetMembers } from "@/hooks/useGetMembers";
+import { CONFIG } from "@/config/config";
 
 interface Member {
   address: string;
@@ -29,7 +30,7 @@ export function Members({ accountAddress, compact = false }: MembersProps) {
   const totalWeight = data?.reduce((sum, m) => sum + m.weight, 0);
 
   const getExplorerAddressHref = (address: string) =>
-    `https://explorer.iota.org/address/${address}?network=http%3A%2F%2F127.0.0.1%3A9000`;
+    `https://explorer.iota.org/address/${address}?network=${CONFIG.network}`;
 
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);

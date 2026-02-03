@@ -4,6 +4,7 @@ import { TransactionSummary } from "@/lib/clients/IsafeIndexerClient";
 import { shortenAddress } from "@/lib/utils/shortenAddress";
 import { formatTimestamp } from "@/lib/utils/formatTimestamp";
 import { useGetTransactionDetails } from "@/hooks/useGetTransactionDetails";
+import { CONFIG } from "@/config";
 
 interface ExecutedTransactionsProps {
   transactions: TransactionSummary[];
@@ -118,7 +119,7 @@ export default function ExecutedTransactions({
               {/* View on Explorer Link */}
               <div className="flex justify-end">
                 <a
-                  href={`https://explorer.iota.org/txblock/${tx.transactionDigest}?network=http%3A%2F%2F127.0.0.1%3A9000`}
+                  href={`https://explorer.iota.org/txblock/${tx.transactionDigest}?network=${CONFIG.network}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition"
