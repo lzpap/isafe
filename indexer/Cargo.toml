@@ -24,12 +24,11 @@ tower-http = { version = "0.6.6", features = ["cors"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["std", "fmt", "ansi", "smallvec", "tracing-log", "local-time", "env-filter"] }
 
-bin-version = { git = "https://github.com/iotaledger/iota", package = "bin-version" }
-iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota", package = "iota-data-ingestion-core", branch = "vm-lang/aa-auth/8805-beta-feature-branch" }
-iota-json-rpc-types = { git = "https://github.com/iotaledger/iota", package = "iota-json-rpc-types" , branch = "vm-lang/aa-auth/8805-beta-feature-branch" }
-iota-metrics = { git = "https://github.com/iotaledger/iota", package = "iota-metrics" , branch = "vm-lang/aa-auth/8805-beta-feature-branch" }
-iota-types = { git = "https://github.com/iotaledger/iota", package = "iota-types", branch = "vm-lang/aa-auth/8805-beta-feature-branch"}
-iota-sdk = { git = "https://github.com/iotaledger/iota", package = "iota-sdk", branch = "vm-lang/aa-auth/8805-beta-feature-branch"}
-
+bin-version = { git = "https://github.com/iotaledger/iota", package = "bin-version", tag = "v1.16.1-beta" }
+iota-data-ingestion-core = { git = "https://github.com/iotaledger/iota", package = "iota-data-ingestion-core", tag = "v1.16.1-beta" }
+iota-json-rpc-types = { git = "https://github.com/iotaledger/iota", package = "iota-json-rpc-types", tag = "v1.16.1-beta" }
+iota-metrics = { git = "https://github.com/iotaledger/iota", package = "iota-metrics", tag = "v1.16.1-beta" }
+iota-types = { git = "https://github.com/iotaledger/iota", package = "iota-types", tag = "v1.16.1-beta" }
+iota-sdk = { git = "https://github.com/iotaledger/iota", package = "iota-sdk", tag = "v1.16.1-beta" }
 [features]
 default = []

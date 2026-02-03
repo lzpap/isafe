@@ -8,7 +8,7 @@ services:
         - GIT_REVISION
         - BUILD_DATE
         - PROFILE=release
-    image: isafe-indexer:dev
+    image: isafe-indexer:${IMAGE_TAG:-dev}
     ports:
       - 3030:3030 # REST API
     tty: true
@@ -51,7 +51,7 @@ services:
         - GIT_REVISION
         - BUILD_DATE
         - PROFILE=release
-    image: tx-service:dev
+    image: tx-service:${IMAGE_TAG:-dev}
     ports:
       - 3031:3031 # REST API
     tty: true

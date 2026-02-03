@@ -10,5 +10,5 @@ fastcrypto = { git = "https://github.com/MystenLabs/fastcrypto", rev = "69d496c7
 serde_json = "1.0"
 tokio = "1.47"
 
-iota-types = { git = "https://github.com/iotaledger/iota", branch = "vm-lang/aa-auth/8805-beta-feature-branch", package = "iota-types" }
-iota-sdk = { git = "https://github.com/iotaledger/iota", branch = "vm-lang/aa-auth/8805-beta-feature-branch", package = "iota-sdk" }
+iota-types = { git = "https://github.com/iotaledger/iota", tag = "v1.16.1-beta", package = "iota-types" }
+iota-sdk = { git = "https://github.com/iotaledger/iota", tag = "v1.16.1-beta", package = "iota-sdk" }

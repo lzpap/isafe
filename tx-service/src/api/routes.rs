@@ -136,7 +136,7 @@ async fn derive_auth_signature(
     };
 
     let sigs = vec![GenericSignature::MoveAuthenticator(
-        MoveAuthenticator::new_for_testing(
+        MoveAuthenticator::new( 
             vec![],
             vec![],
             CallArg::Object(iota_types::transaction::ObjectArg::SharedObject {
