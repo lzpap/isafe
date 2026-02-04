@@ -9,12 +9,33 @@ import { generateAvatar } from "@/lib/utils/generateAvatar";
 import { AccountBalance } from "./AccountBalance";
 import { SendIotaDialog } from "./dialogs/SendIotaDialog";
 import { useGetAccountBalance } from "@/hooks/useGetAccountBalance";
+import { requestIotaFromFaucetV0, getFaucetHost } from "@iota/iota-sdk/faucet";
+import { getDefaultNetwork } from "@/config/config";
+import { queryKey } from "@/hooks/queryKey";
+import { useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 export function AccountOverView({ isafeAccount }: { isafeAccount: string }) {
   const avatarUrl = generateAvatar(isafeAccount, 80);
   const [copied, setCopied] = useState(false);
   const [showSendDialog, setShowSendDialog] = useState(false);
+  const [faucetLoading, setFaucetLoading] = useState(false);
   const { data: balance } = useGetAccountBalance(isafeAccount);
+  const queryClient = useQueryClient();
+
+  const handleFaucet = async () => {
+    setFaucetLoading(true);
+    try {
+      const host = getFaucetHost(getDefaultNetwork());
+      await requestIotaFromFaucetV0({ host, recipient: isafeAccount });
+      await queryClient.invalidateQueries({ queryKey: queryKey.balance(isafeAccount) });
+      toast.success("Tokens received from faucet");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Faucet request failed");
+    } finally {
+      setFaucetLoading(false);
+    }
+  };
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(isafeAccount);
@@ -82,6 +103,32 @@ export function AccountOverView({ isafeAccount }: { isafeAccount: string }) {
 
             <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
               Send funds from this account
+            </span>
+          </div>
+          { /* TODO hide the button for mainnet */  <div className="relative group flex-shrink-0">
+            <button
+              onClick={handleFaucet}
+              disabled={faucetLoading}
+              className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-foreground/10 hover:border-foreground/20 hover:bg-foreground/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Request tokens from faucet"
+              title="Request tokens from faucet"
+            >
+              {faucetLoading ? (
+                <svg className="block w-5 h-5 text-foreground/60 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="block w-5 h-5 text-foreground/60" fill="none" stroke="currentColor" strokeWidth={1.75} viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 22V6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16" />
+                  <path d="M4 22h10" />
+                  <path d="M7 8h4" />
+                  <path d="M14 12h2a2 2 0 0 1 2 2v2a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V9.83a2 2 0 0 0-.59-1.42L18 5" />
+                </svg>
+              )}
+            </button>
+            <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+              Request tokens from faucet
             </span>
           </div>
         </div>
