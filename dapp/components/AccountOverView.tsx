@@ -130,7 +130,7 @@ export function AccountOverView({ isafeAccount }: { isafeAccount: string }) {
             <span className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-xs text-background opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
               Request tokens from faucet
             </span>
-          </div>
+          </div>}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[22rem_48rem] lg:justify-center gap-6">
