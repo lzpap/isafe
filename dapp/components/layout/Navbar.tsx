@@ -1,16 +1,29 @@
 'use client';
 
-import { ConnectButton } from '@iota/dapp-kit';
+import { useEffect, useRef } from 'react';
+import { ConnectButton, useCurrentWallet } from '@iota/dapp-kit';
 import Link from 'next/link';
 import Image from 'next/image';
 import { AccountSelector } from '@/components/AccountSelector';
 import { useISafeAccount } from '@/providers/ISafeAccountProvider';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import clsx from 'clsx';
 
 export function Navbar() {
     const {isafeAccount } = useISafeAccount();
+     const { connectionStatus } = useCurrentWallet();
     const pathname = usePathname();
+    const router = useRouter();
+    const wasConnected = useRef(false);
+
+    useEffect(() => {
+        if (connectionStatus === 'connected') {
+            wasConnected.current = true;
+        } else if (wasConnected.current && connectionStatus === 'disconnected') {
+            wasConnected.current = false;
+            router.push('/');
+        }
+    }, [connectionStatus, router]);
     return (
         <nav id="top-navbar" className="fixed top-0 left-0 w-full h-16 z-50 backdrop-blur-lg bg-foreground/5 flex items-center justify-between px-6">
             <div className="flex items-center gap-6">
@@ -68,9 +81,9 @@ export function Navbar() {
                 )}
             </div>
             <div className="flex items-center gap-4">
-                <div className="w-48">
+                {connectionStatus=='connected' && <div className="w-48">
                     <AccountSelector />
-                </div>
+                </div>}
                 <ConnectButton connectText="Connect Wallet" />
             </div>
         </nav>
