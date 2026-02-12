@@ -80,6 +80,17 @@ export function CancelTransactionDialog({
     const toBeProposedTxBytes = await tx.build({ client: iotaClient });
     const toBeProposedTxDigest = await tx.getDigest();
 
+    // Upload raw tx bytes to service BEFORE signing, so they're never lost
+    try {
+      await txServiceClient.addTransaction(
+        toBase64(toBeProposedTxBytes),
+        `Cancel transaction ${shortenAddress(transactionDigest)}`
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Failed to upload transaction to service: ${message}`);
+    }
+
     const proposingTx = new Transaction();
 
     proposingTx.moveCall({
@@ -95,11 +106,7 @@ export function CancelTransactionDialog({
     signAndExecuteTransaction(
       { transaction: proposingTx, waitForTransaction: true },
       {
-        onSuccess: async () => {
-          await txServiceClient.addTransaction(
-            toBase64(toBeProposedTxBytes),
-            `Cancel transaction ${shortenAddress(transactionDigest)}`
-          );
+        onSuccess: () => {
           queryClient.invalidateQueries();
           setStep(4);
           setSuccess(true);

@@ -140,6 +140,34 @@ export function ExecuteSettingChangesDialog({
 
     const toBeProposedTxDigest = await tx.getDigest();
 
+    // Build description
+    let description = "";
+    switch (action.type) {
+      case "add_member":
+        description = `Add member ${action.address} with weight ${action.weight}`;
+        break;
+      case "remove_member":
+        description = `Remove member ${action.address}`;
+        break;
+      case "update_weight":
+        description = `Update weight of member ${action.address} to ${action.newWeight}`;
+        break;
+      case "set_threshold":
+        description = `Set new threshold to ${action.newThreshold}`;
+        break;
+    }
+
+    // Upload raw tx bytes to service BEFORE signing, so they're never lost
+    try {
+      await txServiceClient.addTransaction(
+        toBase64(toBeProposedTxBytes),
+        description
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Failed to upload transaction to service: ${message}`);
+    }
+
     const proposingTx = new Transaction();
 
     proposingTx.moveCall({
@@ -155,34 +183,10 @@ export function ExecuteSettingChangesDialog({
     signAndExecuteTransaction(
       { transaction: proposingTx, waitForTransaction: true },
       {
-        onSuccess: async () => {
-          let description = "";
-          switch (action.type) {
-            case "add_member":
-              description = `Add member ${action.address} with weight ${action.weight}`;
-              break;
-            case "remove_member":
-              description = `Remove member ${action.address}`;
-              break;
-            case "update_weight":
-              description = `Update weight of member ${action.address} to ${action.newWeight}`;
-              break;
-            case "set_threshold":
-              description = `Set new threshold to ${action.newThreshold}`;
-              break;
-            default:
-              // no additional action needed for now
-              break;
-          }
-          await txServiceClient.addTransaction(
-            toBase64(toBeProposedTxBytes),
-            description
-          );
-          // we just proposed a transaction that can change the account state, so we need to invalidate related queries
+        onSuccess: () => {
           queryClient.invalidateQueries();
-          setStep(4); // 4a. Success
+          setStep(4);
           setSuccess(true);
-          return toBeProposedTxDigest;
         },
         onError: (err) => {
           throw new Error(`Transaction failed: ${err.message}`);

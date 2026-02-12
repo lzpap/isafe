@@ -102,6 +102,18 @@ export function SendIotaDialog({
     const toBeProposedTxBytes = await tx.build({ client: iotaClient });
     const toBeProposedTxDigest = await tx.getDigest();
 
+    // Upload raw tx bytes to service BEFORE signing, so they're never lost
+    const description = `Sending ${amount} IOTA(s) to ${targetAddress}`;
+    try {
+      await txServiceClient.addTransaction(
+        toBase64(toBeProposedTxBytes),
+        description
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(`Failed to upload transaction to service: ${message}`);
+    }
+
     const proposingTx = new Transaction();
 
     proposingTx.moveCall({
@@ -117,16 +129,10 @@ export function SendIotaDialog({
     signAndExecuteTransaction(
       { transaction: proposingTx, waitForTransaction: true },
       {
-        onSuccess: async () => {
-          const description = `Sending ${amount} IOTA(s) to ${targetAddress}`;
-          await txServiceClient.addTransaction(
-            toBase64(toBeProposedTxBytes),
-            description
-          );
+        onSuccess: () => {
           queryClient.invalidateQueries();
           setStep(4);
           setSuccess(true);
-          return toBeProposedTxDigest;
         },
         onError: (err) => {
           throw new Error(`Transaction failed: ${err.message}`);

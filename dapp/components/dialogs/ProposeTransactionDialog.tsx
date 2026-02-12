@@ -109,8 +109,6 @@ export function ProposeTransactionDialog({
 
   const handlePropose = async () => {
     try {
-      // let's preapre the transaction
-      // Create the transaction
       const tx = new Transaction();
 
       const PACKAGE_ID = CONFIG.packageId;
@@ -126,24 +124,24 @@ export function ProposeTransactionDialog({
           ),
         ],
       });
-      // Sign and execute the transaction
+
+      // Upload raw tx bytes to service BEFORE signing, so they're never lost
+      try {
+        await txServiceClient.addTransaction(txBytes, description);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        throw new Error(`Failed to upload transaction to service: ${message}`);
+      }
+
+      // Sign and execute the proposal on-chain
       signAndExecuteTransaction(
         {
           transaction: tx,
           waitForTransaction: true,
         },
         {
-          onSuccess: async () => {
+          onSuccess: () => {
             setProposalSuccess(true);
-            try {
-              await txServiceClient.addTransaction(txBytes, description);
-            } catch (err) {
-              setProposalSuccess(false);
-              const message = err instanceof Error ? err.message : String(err);
-              setProposalError(
-                "Failed to upload transaction to service: " + message
-              );
-            }
           },
           onError: (error) => {
             if (isTxAlreadyProposedError(error)) {
