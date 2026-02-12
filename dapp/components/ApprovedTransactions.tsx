@@ -7,9 +7,11 @@ import { ApprovalProgressBar } from "./ApprovalProgressBar";
 import { useState } from "react";
 import { ExecuteTransactionDialog } from "./dialogs/ExecuteTransactionDialog";
 import { ApproveTransactionDialog } from "./dialogs/ApproveTransactionDialog";
+import { CancelTransactionDialog } from "./dialogs/CancelTransactionDialog";
 import { useCurrentAccount } from "@iota/dapp-kit";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetTransactionDetails } from "@/hooks/useGetTransactionDetails";
+import { useSimulateTransactions } from "@/hooks/useSimulateTransactions";
 
 interface ApprovedTransactionsProps {
   transactions: TransactionSummary[];
@@ -26,6 +28,9 @@ export default function ApprovedTransactions({
   const [approveTxDigestDialog, setApproveTxDigestDialog] = useState<
     string | null
   >(null);
+  const [cancelTxDigestDialog, setCancelTxDigestDialog] = useState<
+    string | null
+  >(null);
   const handleExecute = async (txDigest: string) => {
     setExecuteTxDigestDialog(txDigest);
   };
@@ -33,6 +38,11 @@ export default function ApprovedTransactions({
   const { data, isLoading } = useGetTransactionDetails(
     transactions.map((tx) => tx.transactionDigest)
   );
+
+  const { simulations } = useSimulateTransactions(
+    data ? data.map((d) => d.bcs) : []
+  );
+
   if (isLoading) {
     return <div>Loading transactions...</div>;
   }
@@ -146,8 +156,54 @@ export default function ApprovedTransactions({
                     />
                   </div>
 
-                  {/* Approve & Execute Buttons */}
+                  {/* Simulation Warning */}
+                  {simulations[index] && !simulations[index].passed && (
+                    <div className="mb-3 flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <svg
+                        className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm text-red-500 font-medium">
+                          Transaction may be outdated
+                        </p>
+                        <p className="text-xs text-red-500/70">
+                          {simulations[index].error}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
                   <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setCancelTxDigestDialog(tx.transactionDigest)}
+                      className="flex items-center gap-2 px-4 py-2 border border-red-500/30 text-red-500 rounded-lg text-sm font-medium hover:bg-red-500/10 transition cursor-pointer"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      Cancel
+                    </button>
                     {currentAccount && !hasApproved && (
                       <button
                         onClick={() => setApproveTxDigestDialog(tx.transactionDigest)}
@@ -190,6 +246,16 @@ export default function ApprovedTransactions({
             setApproveTxDigestDialog(null);
           }}
           onCompleted={() => setApproveTxDigestDialog(null)}
+        />
+      )}
+      {cancelTxDigestDialog && (
+        <CancelTransactionDialog
+          transactionDigest={cancelTxDigestDialog}
+          closeDialog={() => {
+            queryClient.invalidateQueries();
+            setCancelTxDigestDialog(null);
+          }}
+          onCompleted={() => setCancelTxDigestDialog(null)}
         />
       )}
       {executeTxDigestDialog && (

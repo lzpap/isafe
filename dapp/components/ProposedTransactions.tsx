@@ -8,8 +8,10 @@ import { ProposeTransactionDialog } from "./dialogs/ProposeTransactionDialog";
 import { ApproveTransactionDialog } from "./dialogs/ApproveTransactionDialog";
 import { useCurrentAccount } from "@iota/dapp-kit";
 import { ApprovalProgressBar } from "./ApprovalProgressBar";
+import { CancelTransactionDialog } from "./dialogs/CancelTransactionDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetTransactionDetails } from "@/hooks/useGetTransactionDetails";
+import { useSimulateTransactions } from "@/hooks/useSimulateTransactions";
 
 interface ProposedTransactionsProps {
   transactions: TransactionSummary[];
@@ -26,6 +28,9 @@ export default function ProposedTransactions({
   const [approveTxDigestDialog, setApproveTxDigestDialog] = useState<
     string | null
   >(null);
+  const [cancelTxDigestDialog, setCancelTxDigestDialog] = useState<
+    string | null
+  >(null);
   const currentAccount = useCurrentAccount();
 
   const handleApprove = (txDigest: string) => {
@@ -35,6 +40,11 @@ export default function ProposedTransactions({
   const { data, isLoading } = useGetTransactionDetails(
     transactions.map((tx) => tx.transactionDigest)
   );
+
+  const { simulations } = useSimulateTransactions(
+    data ? data.map((d) => d.bcs) : []
+  );
+
   if (isLoading) {
     return <div>Loading transactions...</div>;
   }
@@ -170,9 +180,55 @@ export default function ProposedTransactions({
                     />
                   </div>
 
-                  {/* Approve Button */}
-                  {currentAccount && !hasApproved && (
-                    <div className="flex justify-end">
+                  {/* Simulation Warning */}
+                  {simulations[index] && !simulations[index].passed && (
+                    <div className="mb-3 flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                      <svg
+                        className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
+                      </svg>
+                      <div>
+                        <p className="text-sm text-red-500 font-medium">
+                          Transaction may be outdated
+                        </p>
+                        <p className="text-xs text-red-500/70">
+                          {simulations[index].error}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => setCancelTxDigestDialog(tx.transactionDigest)}
+                      className="flex items-center gap-2 px-4 py-2 border border-red-500/30 text-red-500 rounded-lg text-sm font-medium hover:bg-red-500/10 transition cursor-pointer"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                      Cancel
+                    </button>
+                    {currentAccount && !hasApproved && (
                       <button
                         onClick={() => handleApprove(tx.transactionDigest)}
                         className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 active:bg-green-800 transition shadow-sm cursor-pointer"
@@ -192,10 +248,8 @@ export default function ProposedTransactions({
                         </svg>
                         Approve
                       </button>
-                    </div>
-                  )}
-                  {currentAccount && hasApproved && (
-                    <div className="flex justify-end">
+                    )}
+                    {currentAccount && hasApproved && (
                       <span className="flex items-center gap-2 px-3 py-1.5 text-foreground/50 text-sm">
                         <svg
                           className="w-4 h-4 text-green-500"
@@ -212,8 +266,8 @@ export default function ProposedTransactions({
                         </svg>
                         You approved
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -238,6 +292,16 @@ export default function ProposedTransactions({
             setApproveTxDigestDialog(null);
           }}
           onCompleted={() => setApproveTxDigestDialog(null)}
+        />
+      )}
+      {cancelTxDigestDialog && (
+        <CancelTransactionDialog
+          transactionDigest={cancelTxDigestDialog}
+          closeDialog={() => {
+            queryClient.invalidateQueries();
+            setCancelTxDigestDialog(null);
+          }}
+          onCompleted={() => setCancelTxDigestDialog(null)}
         />
       )}
     </>
