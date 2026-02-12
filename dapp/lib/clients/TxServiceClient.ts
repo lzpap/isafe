@@ -5,8 +5,8 @@ export class TxServiceClient {
     this.baseUrl = baseUrl;
   }
 
-  async getTransaction(digest: string): Promise<TransactionDetailsResponse> {
-    const response = await fetch(`${this.baseUrl}/transaction/${digest}`);
+  async getTransaction(digest: string, signal?: AbortSignal): Promise<TransactionDetailsResponse> {
+    const response = await fetch(`${this.baseUrl}/transaction/${digest}`, { signal });
 
     if (!response.ok) {
       throw new Error(`Failed to fetch transaction: ${response.statusText}`);

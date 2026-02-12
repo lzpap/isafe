@@ -10,14 +10,24 @@ export function useGetTransactionDetails(transactionDigests: string[]) {
     queries: transactionDigests.map((digest) => ({
       queryKey: queryKey.transactionDetails(digest),
       queryFn: async () => {
-        return txServiceClient.getTransaction(digest);
+        return txServiceClient.getTransaction(digest, AbortSignal.timeout(2000));
       },
+      retry: false,
     })),
     combine: (results) => {
-      const data = results.map((res) => res.data) as TransactionDetailsResponse[];
+        const data = results.map((res, i) => {
+        if (res.error || res.data == null) {
+          return {
+            bcs: "",
+            sender: "",
+            addedAt: 0,
+            description: "Failed to find transaction in database",
+          } satisfies TransactionDetailsResponse;
+        }
+        return res.data;
+      });
       const isLoading = results.some((res) => res.isLoading);
-      const error = results.find((res) => res.error)?.error || null;
-      return { data, isLoading, error };
+      return { data, isLoading };
     }
   });
 }
