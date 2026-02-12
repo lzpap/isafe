@@ -13,15 +13,11 @@ interface ExecutedTransactionsProps {
 export default function ExecutedTransactions({
   transactions,
 }: ExecutedTransactionsProps) {
-  const { data, isLoading, error } = useGetTransactionDetails(
+  const { data, isLoading } = useGetTransactionDetails(
     transactions.map((tx) => tx.transactionDigest)
   );
   if (isLoading) {
     return <div>Loading transactions...</div>;
-  }
-
-  if (error || (!data && !isLoading)) {
-    return <div>Error loading transaction details: {error?.message}</div>;
   }
   return (
     <div className="bg-foreground/5 rounded-xl p-6 border border-foreground/10">
