@@ -97,7 +97,15 @@ async fn add_transaction(
         .map_err(|err| ApiError::Database(err))?;
 
     queries::insert_transaction(&mut conn, &tx_data, payload.description, now)
-        .map_err(|err| ApiError::Database(err))?;
+        .map_err(|err| {
+            if let Some(diesel::result::Error::DatabaseError(
+                diesel::result::DatabaseErrorKind::UniqueViolation, _
+            )) = err.downcast_ref::<diesel::result::Error>() {
+                ApiError::TransactionAlreadyExists(format!("Transaction with digest {} already exists", tx_digest))
+            } else {
+                ApiError::Database(err)
+            }
+        })?;
     Ok(Json(AddTxResponse {
         digest: tx_digest.to_string(),
         added_at: now,

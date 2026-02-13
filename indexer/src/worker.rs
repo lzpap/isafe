@@ -500,6 +500,38 @@ impl IsafeWorker {
             IsafeEvent::TransactionRemoved(tx_removed_event) => {
                 // TODO: remove the transaction from the transactions table?
                 conn.transaction::<_, anyhow::Error, _>(|conn| {
+                let tx_digest_bytes: [u8; 32] = tx_removed_event
+                    .transaction_digest
+                    .clone()
+                    .try_into()
+                    .expect("Invalid transaction digest length");
+                let tx_digest = TransactionDigest::from(tx_digest_bytes);
+                    // if the transaction was already executed and got deleted, that means normal cleanup of on-chain state
+                    // if the transaction was proposed/approved but got deleted, that means the transaction got rejected/cancelled
+                    match queries::get_transaction(conn, tx_digest.to_string()) {
+                        Ok(tx) => {
+                            match tx.status {
+                                Status::Proposed | Status::Approved => {
+                                    // change the status to Rejected
+                                    queries::update_transaction_status(
+                                        conn,
+                                        tx_digest.to_string(),
+                                        Status::Rejected.into(),
+                                    )?;
+                                },
+                                Status::Executed => {
+                                    // transaction got removed after execution, this is expected as on-chain state will be cleaned up eventually
+                                    // we keep the transaction in the database with Executed status for historical/reference purposes
+                                },
+                                Status::Rejected => {
+                                    warn!("Transaction {} got removed from chain with Rejected status, this should not have happened", tx_digest.to_string());
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            warn!("Transaction {} not found in database when processing TransactionRemoved event: {e}", tx_digest.to_string());
+                        }
+                    }
                     queries::insert_event_entry(
                         conn,
                         tx_removed_event.account_id.to_string(),

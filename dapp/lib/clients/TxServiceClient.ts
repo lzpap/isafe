@@ -30,6 +30,11 @@ export class TxServiceClient {
       }),
     });
 
+    if (response.status === 409) {
+      // transaction already exists on the db, no need to fail
+      return response.json();
+    }
+
     if (!response.ok) {
       throw new Error(`Failed to upload transaction: ${response.statusText}`);
     }

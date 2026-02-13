@@ -11,6 +11,8 @@ use reqwest::StatusCode;
 pub enum ApiError {
     // Invalid input data (e.g., malformed address)
     BadRequest(String),
+    // Transaction already in database
+    TransactionAlreadyExists(String),
     // Database connection or query errors
     Database(anyhow::Error),
     // Internal server errors
@@ -41,6 +43,13 @@ impl IntoResponse for ApiError {
                 Json(serde_json::json!({
                     "error": "Internal Server Error",
                     "message": err.to_string()
+                })),
+            ),
+            ApiError::TransactionAlreadyExists(msg) => (
+                StatusCode::CONFLICT,
+                Json(serde_json::json!({
+                    "error": "Conflict",
+                    "message": msg
                 })),
             ),
         };

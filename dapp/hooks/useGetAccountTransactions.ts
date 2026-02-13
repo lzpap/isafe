@@ -16,9 +16,8 @@ export function useGetSortedAccountTransactions(accountId: string) {
                 proposed: data.filter(tx => tx.status === 'Proposed'),
                 approved: data.filter(tx => tx.status === 'Approved'),
                 executed: data.filter(tx => tx.status === 'Executed'),
+                rejected: data.filter(tx => tx.status === 'Rejected'),
             };
-
-
         },
         enabled: !!accountId,
         staleTime: 1000,
@@ -28,13 +27,9 @@ export function useGetSortedAccountTransactions(accountId: string) {
     });
 }
 
-
-
-
-
-
 export type SortedTransactions = {
     proposed: TransactionSummary[];
     approved: TransactionSummary[];
     executed: TransactionSummary[];
+    rejected: TransactionSummary[];
 }

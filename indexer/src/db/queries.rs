@@ -11,6 +11,7 @@ use iota_types::digests::TransactionDigest;
 
 use crate::db::models;
 use crate::db::models::Status;
+use crate::db::models::StoredTransaction;
 use crate::db::models::TransactionSummary;
 use crate::db::schema::accounts;
 use crate::db::schema::approvals;
@@ -232,6 +233,28 @@ pub fn update_transaction_status(
     } else {
         return Err(anyhow::anyhow!("Transaction not found"));
     }
+    Ok(())
+}
+
+pub fn get_transaction(
+    conn: &mut SqliteConnection,
+    tx_digest: String,
+) -> Result<StoredTransaction> {
+    match transactions::table
+        .filter(transactions::transaction_digest.eq(tx_digest.clone()))
+        .first::<models::StoredTransaction>(conn)
+        .optional()?
+    {
+        Some(tx) => Ok(tx),
+        None => Err(anyhow::anyhow!("Transaction not found")),
+    }
+}
+
+pub fn delete_transaction(
+    conn: &mut SqliteConnection,
+    tx_digest: String,
+) -> Result<()> {
+    delete(transactions::table.filter(transactions::transaction_digest.eq(tx_digest.clone()))).execute(conn)?;
     Ok(())
 }
 
