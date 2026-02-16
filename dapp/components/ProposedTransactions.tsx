@@ -298,8 +298,8 @@ export default function ProposedTransactions({
         <CancelTransactionDialog
           transactionDigest={cancelTxDigestDialog}
           closeDialog={() => {
-            queryClient.invalidateQueries();
             setCancelTxDigestDialog(null);
+            queryClient.invalidateQueries();
           }}
           onCompleted={() => setCancelTxDigestDialog(null)}
         />

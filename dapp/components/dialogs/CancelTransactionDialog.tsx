@@ -107,7 +107,6 @@ export function CancelTransactionDialog({
       { transaction: proposingTx, waitForTransaction: true },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries();
           setStep(4);
           setSuccess(true);
         },

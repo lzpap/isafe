@@ -252,8 +252,8 @@ export default function ApprovedTransactions({
         <CancelTransactionDialog
           transactionDigest={cancelTxDigestDialog}
           closeDialog={() => {
-            queryClient.invalidateQueries();
             setCancelTxDigestDialog(null);
+            queryClient.invalidateQueries();
           }}
           onCompleted={() => setCancelTxDigestDialog(null)}
         />
@@ -264,7 +264,6 @@ export default function ApprovedTransactions({
           closeDialog={() => {
             setExecuteTxDigestDialog(null);
             queryClient.invalidateQueries();
-            setExecuteTxDigestDialog(null);
           }}
           onCompleted={() => setExecuteTxDigestDialog(null)}
         />
