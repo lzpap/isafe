@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import ProposedTransactions from "@/components/ProposedTransactions";
 import ApprovedTransactions from "@/components/ApprovedTransactions";
 import ExecutedTransactions from "@/components/ExecutedTransactions";
 import RejectedTransactions from "@/components/RejectedTransactions";
 import { useGetSortedAccountTransactions } from "@/hooks/useGetAccountTransactions";
+import { BatchCancelTransactionDialog } from "./dialogs/BatchCancelTransactionDialog";
+import { useQueryClient } from "@tanstack/react-query";
 
 type TabType = "proposed" | "approved" | "executed" | "rejected";
 
@@ -13,10 +15,20 @@ type TabType = "proposed" | "approved" | "executed" | "rejected";
 
 export default function Transactions({accountAddress}: {accountAddress: string}) {
   const [activeTab, setActiveTab] = useState<TabType>("proposed");
+  const [batchCancelDigests, setBatchCancelDigests] = useState<string[]>([]);
+  const [showBatchDialog, setShowBatchDialog] = useState(false);
+  const queryClient = useQueryClient();
 
   // Fetch transactions data here
   const { data: transactionsData } = useGetSortedAccountTransactions(accountAddress);
 
+  const onToggleBatchCancel = useCallback((digest: string) => {
+    setBatchCancelDigests((prev) =>
+      prev.includes(digest)
+        ? prev.filter((d) => d !== digest)
+        : [...prev, digest]
+    );
+  }, []);
 
   const tabs: { id: TabType; label: string; icon: React.ReactNode; count: number }[] = [
     {
@@ -98,13 +110,47 @@ export default function Transactions({accountAddress}: {accountAddress: string})
         </div>
       </div>
 
+      {/* Batch Cancellation Bar */}
+      {batchCancelDigests.length > 0 && (
+        <div className="flex items-center justify-between p-3 mb-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <span className="text-sm text-red-500 font-medium">
+            {batchCancelDigests.length} transaction{batchCancelDigests.length !== 1 ? "s" : ""} selected for batch cancellation
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBatchCancelDigests([])}
+              className="text-xs px-3 py-1.5 border border-foreground/20 text-foreground/60 rounded-lg font-medium hover:bg-foreground/5 transition cursor-pointer"
+            >
+              Clear
+            </button>
+            <button
+              onClick={() => setShowBatchDialog(true)}
+              className="text-xs px-3 py-1.5 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition cursor-pointer"
+            >
+              Cancel {batchCancelDigests.length} transaction{batchCancelDigests.length !== 1 ? "s" : ""}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div>
-        {activeTab === "proposed" && <ProposedTransactions transactions={transactionsData?.proposed || []} />}
-        {activeTab === "approved" && <ApprovedTransactions transactions={transactionsData?.approved || []} />}
+        {activeTab === "proposed" && <ProposedTransactions transactions={transactionsData?.proposed || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />}
+        {activeTab === "approved" && <ApprovedTransactions transactions={transactionsData?.approved || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />}
         {activeTab === "executed" && <ExecutedTransactions transactions={transactionsData?.executed || []} />}
         {activeTab === "rejected" && <RejectedTransactions transactions={transactionsData?.rejected || []} />}
       </div>
+
+      {showBatchDialog && (
+        <BatchCancelTransactionDialog
+          transactionDigests={batchCancelDigests}
+          closeDialog={() => {
+            setShowBatchDialog(false);
+            setBatchCancelDigests([]);
+            queryClient.invalidateQueries();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -179,7 +179,7 @@ export function AccountActivity({ accountAddress }: AccountActivityProps) {
             <div className="scrollbar-theme space-y-2 h-72 overflow-y-scroll pr-1">
                 {sortedEvents && sortedEvents.length > 0 ? (
                     sortedEvents.map((event) => (
-                        <EventItem key={event.firedInTx+event.eventType} event={event} />
+                        <EventItem key={event.firedInTx+event.eventType+event.timestamp.getMilliseconds()} event={event} />
                     ))
                 ) : (
                     <div className="text-center py-8 text-foreground/60">

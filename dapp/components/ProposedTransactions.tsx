@@ -15,10 +15,14 @@ import { useSimulateTransactions } from "@/hooks/useSimulateTransactions";
 
 interface ProposedTransactionsProps {
   transactions: TransactionSummary[];
+  batchCancelDigests: string[];
+  onToggleBatchCancel: (digest: string) => void;
 }
 
 export default function ProposedTransactions({
   transactions,
+  batchCancelDigests,
+  onToggleBatchCancel,
 }: ProposedTransactionsProps) {
   const queryClient = useQueryClient();
 
@@ -196,7 +200,7 @@ export default function ProposedTransactions({
                           d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"
                         />
                       </svg>
-                      <div>
+                      <div className="flex-1">
                         <p className="text-sm text-red-500 font-medium">
                           Transaction may be outdated
                         </p>
@@ -204,6 +208,18 @@ export default function ProposedTransactions({
                           {simulations[index].error}
                         </p>
                       </div>
+                      <button
+                        onClick={() => onToggleBatchCancel(tx.transactionDigest)}
+                        className={`flex-shrink-0 text-xs px-2 py-1 rounded font-medium transition cursor-pointer ${
+                          batchCancelDigests.includes(tx.transactionDigest)
+                            ? "bg-red-500 text-white hover:bg-red-600"
+                            : "border border-red-500/30 text-red-500 hover:bg-red-500/10"
+                        }`}
+                      >
+                        {batchCancelDigests.includes(tx.transactionDigest)
+                          ? "Remove from batch"
+                          : "Add to batch cancellation"}
+                      </button>
                     </div>
                   )}
 
