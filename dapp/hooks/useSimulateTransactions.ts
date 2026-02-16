@@ -1,5 +1,8 @@
 import { useQueries } from "@tanstack/react-query";
 import { useIotaClient } from "@iota/dapp-kit";
+import { IotaClient } from "@iota/iota-sdk/client";
+import { Transaction } from "@iota/iota-sdk/transactions";
+import { fromBase64 } from "@iota/iota-sdk/utils";
 
 export interface SimulationResult {
   passed: boolean;
@@ -26,6 +29,7 @@ export function useSimulateTransactions(txBytesArray: string[]) {
               error: `${result.effects.status.error}`,
             };
           }
+          await checkGas(txBytes, client);
           return { passed: true };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -50,4 +54,39 @@ export function useSimulateTransactions(txBytesArray: string[]) {
       return { simulations, isLoading };
     },
   });
+}
+
+async function checkGas(txBytes: string, client: IotaClient) {
+  const decoded = fromBase64(txBytes);
+  const txData = Transaction.from(decoded).getData();
+  const payments = txData.gasData.payment;
+
+  if (!payments || payments.length === 0) {
+    throw new Error("No gas payment objects in transaction");
+  }
+
+  const objects = await client.multiGetObjects({
+    ids: payments.map((p) => p.objectId),
+    options: { showOwner: true },
+  });
+
+  for (let i = 0; i < payments.length; i++) {
+    const expected = payments[i];
+    const fetched = objects[i];
+
+    if (!fetched.data) {
+      throw new Error(
+        `Gas object ${expected.objectId} no longer exists`
+      );
+    }
+
+    if (
+      fetched.data.version !== String(expected.version) ||
+      fetched.data.digest !== expected.digest
+    ) {
+      throw new Error(
+        `Gas object ${expected.objectId} has changed (expected version ${expected.version}, got ${fetched.data.version})`
+      );
+    }
+  }
 }
