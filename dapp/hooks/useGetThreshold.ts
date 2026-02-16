@@ -20,7 +20,7 @@ export function useGetThreshold(accountId: string) {
         queryFn: async () => {
           const data = await client.view({
             functionName: `${CONFIG.packageId}::dynamic_auth::threshold`,
-            callArgs: [accountId],
+            arguments: [accountId],
           });
 
           if (isExecutionError(data)) {
@@ -45,7 +45,7 @@ export function useGetThreshold(accountId: string) {
         queryFn: async () => {
           const data = await client.view({
             functionName: `${CONFIG.packageId}::dynamic_auth::total_member_weight`,
-            callArgs: [accountId],
+            arguments: [accountId],
           });
 
           if (isExecutionError(data)) {

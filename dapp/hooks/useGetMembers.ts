@@ -16,7 +16,7 @@ export function useGetMembers(accountId: string) {
         queryFn: async () => {
             const data = await client.view({
                 functionName: `${CONFIG.packageId}::dynamic_auth::members`,
-                callArgs: [ accountId]
+                arguments: [ accountId]
             })
 
             if (isExecutionError(data)) {
