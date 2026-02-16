@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import ProposedTransactions from "@/components/ProposedTransactions";
 import ApprovedTransactions from "@/components/ApprovedTransactions";
 import ExecutedTransactions from "@/components/ExecutedTransactions";
@@ -8,6 +8,7 @@ import RejectedTransactions from "@/components/RejectedTransactions";
 import { useGetSortedAccountTransactions } from "@/hooks/useGetAccountTransactions";
 import { BatchCancelTransactionDialog } from "./dialogs/BatchCancelTransactionDialog";
 import { useQueryClient } from "@tanstack/react-query";
+import { useSeenTransactions } from "@/hooks/useSeenTransactions";
 
 type TabType = "proposed" | "approved" | "executed" | "rejected";
 
@@ -18,9 +19,17 @@ export default function Transactions({accountAddress}: {accountAddress: string})
   const [batchCancelDigests, setBatchCancelDigests] = useState<string[]>([]);
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const queryClient = useQueryClient();
+  const { getUnseenCount, markAsSeen } = useSeenTransactions(accountAddress);
 
   // Fetch transactions data here
   const { data: transactionsData } = useGetSortedAccountTransactions(accountAddress);
+
+  // Mark current tab's transactions as seen when tab or data changes
+  useEffect(() => {
+    if (!transactionsData) return;
+    const digests = (transactionsData[activeTab] || []).map((tx) => tx.transactionDigest);
+    if (digests.length > 0) markAsSeen(activeTab, digests);
+  }, [activeTab, transactionsData, markAsSeen]);
 
   const onToggleBatchCancel = useCallback((digest: string) => {
     setBatchCancelDigests((prev) =>
@@ -30,11 +39,18 @@ export default function Transactions({accountAddress}: {accountAddress: string})
     );
   }, []);
 
+  const unseenCounts: Record<TabType, number> = {
+    proposed: getUnseenCount("proposed", (transactionsData?.proposed || []).map((tx) => tx.transactionDigest)),
+    approved: getUnseenCount("approved", (transactionsData?.approved || []).map((tx) => tx.transactionDigest)),
+    executed: getUnseenCount("executed", (transactionsData?.executed || []).map((tx) => tx.transactionDigest)),
+    rejected: getUnseenCount("rejected", (transactionsData?.rejected || []).map((tx) => tx.transactionDigest)),
+  };
+
   const tabs: { id: TabType; label: string; icon: React.ReactNode; count: number }[] = [
     {
       id: "proposed",
       label: "Proposed",
-      count: transactionsData?.proposed?.length || 0,
+      count: unseenCounts.proposed,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -44,7 +60,7 @@ export default function Transactions({accountAddress}: {accountAddress: string})
     {
       id: "approved",
       label: "Approved",
-      count: transactionsData?.approved?.length || 0,
+      count: unseenCounts.approved,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -54,7 +70,7 @@ export default function Transactions({accountAddress}: {accountAddress: string})
     {
       id: "executed",
       label: "Executed",
-      count: transactionsData?.executed?.length || 0,
+      count: unseenCounts.executed,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -101,9 +117,9 @@ export default function Transactions({accountAddress}: {accountAddress: string})
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            {(transactionsData?.rejected?.length || 0) > 0 && (
+            {unseenCounts.rejected > 0 && (
               <span className="absolute -top-1 -right-1 min-w-5 h-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full px-1">
-                {transactionsData?.rejected?.length}
+                {unseenCounts.rejected}
               </span>
             )}
           </button>
@@ -134,11 +150,17 @@ export default function Transactions({accountAddress}: {accountAddress: string})
       )}
 
       {/* Content */}
-      <div>
-        {activeTab === "proposed" && <ProposedTransactions transactions={transactionsData?.proposed || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />}
-        {activeTab === "approved" && <ApprovedTransactions transactions={transactionsData?.approved || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />}
-        {activeTab === "executed" && <ExecutedTransactions transactions={transactionsData?.executed || []} />}
-        {activeTab === "rejected" && <RejectedTransactions transactions={transactionsData?.rejected || []} />}
+      <div className={activeTab !== "proposed" ? "hidden" : undefined}>
+        <ProposedTransactions transactions={transactionsData?.proposed || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />
+      </div>
+      <div className={activeTab !== "approved" ? "hidden" : undefined}>
+        <ApprovedTransactions transactions={transactionsData?.approved || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />
+      </div>
+      <div className={activeTab !== "executed" ? "hidden" : undefined}>
+        <ExecutedTransactions transactions={transactionsData?.executed || []} />
+      </div>
+      <div className={activeTab !== "rejected" ? "hidden" : undefined}>
+        <RejectedTransactions transactions={transactionsData?.rejected || []} />
       </div>
 
       {showBatchDialog && (
