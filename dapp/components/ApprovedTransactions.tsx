@@ -4,6 +4,7 @@ import { TransactionSummary } from "@/lib/clients/IsafeIndexerClient";
 import { shortenAddress } from "@/lib/utils/shortenAddress";
 import { formatTimestamp } from "@/lib/utils/formatTimestamp";
 import { ApprovalProgressBar } from "./ApprovalProgressBar";
+import { Member } from "@/hooks/useGetMembers";
 import { useState } from "react";
 import { ExecuteTransactionDialog } from "./dialogs/ExecuteTransactionDialog";
 import { ApproveTransactionDialog } from "./dialogs/ApproveTransactionDialog";
@@ -15,12 +16,14 @@ import { useSimulateTransactions } from "@/hooks/useSimulateTransactions";
 
 interface ApprovedTransactionsProps {
   transactions: TransactionSummary[];
+  members: Member[];
   batchCancelDigests: string[];
   onToggleBatchCancel: (digest: string) => void;
 }
 
 export default function ApprovedTransactions({
   transactions,
+  members,
   batchCancelDigests,
   onToggleBatchCancel,
 }: ApprovedTransactionsProps) {
@@ -154,9 +157,9 @@ export default function ApprovedTransactions({
                   {/* Progress Bar */}
                   <div className="mb-3">
                     <ApprovalProgressBar
-                      currentApprovals={tx.currentApprovals}
+                      members={members}
+                      approvedBy={tx.approvedBy}
                       threshold={tx.threshold}
-                      totalAccountWeight={tx.totalAccountWeight}
                     />
                   </div>
 

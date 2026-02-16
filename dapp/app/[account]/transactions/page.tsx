@@ -9,6 +9,7 @@ import { useGetSortedAccountTransactions } from "@/hooks/useGetAccountTransactio
 import { BatchCancelTransactionDialog } from "@/components/dialogs/BatchCancelTransactionDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSeenTransactions } from "@/hooks/useSeenTransactions";
+import { useGetMembers } from "@/hooks/useGetMembers";
 
 type TabType = "proposed" | "approved" | "executed";
 
@@ -20,6 +21,7 @@ export default function TransactionsPage() {
   const [showBatchDialog, setShowBatchDialog] = useState(false);
   const queryClient = useQueryClient();
   const { getUnseenCount, markAsSeen } = useSeenTransactions(accountAddress);
+  const { data: members = [] } = useGetMembers(accountAddress);
 
   // Fetch transactions data here
   const { data: transactionsData } = useGetSortedAccountTransactions(accountAddress);
@@ -130,10 +132,10 @@ export default function TransactionsPage() {
 
       {/* Content */}
       <div className={activeTab !== "proposed" ? "hidden" : undefined}>
-        <ProposedTransactions transactions={transactionsData?.proposed || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />
+        <ProposedTransactions transactions={transactionsData?.proposed || []} members={members} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />
       </div>
       <div className={activeTab !== "approved" ? "hidden" : undefined}>
-        <ApprovedTransactions transactions={transactionsData?.approved || []} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />
+        <ApprovedTransactions transactions={transactionsData?.approved || []} members={members} batchCancelDigests={batchCancelDigests} onToggleBatchCancel={onToggleBatchCancel} />
       </div>
       <div className={activeTab !== "executed" ? "hidden" : undefined}>
         <ExecutedTransactions transactions={transactionsData?.executed || []} />

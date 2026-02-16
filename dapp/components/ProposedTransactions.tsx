@@ -8,6 +8,7 @@ import { ProposeTransactionDialog } from "./dialogs/ProposeTransactionDialog";
 import { ApproveTransactionDialog } from "./dialogs/ApproveTransactionDialog";
 import { useCurrentAccount } from "@iota/dapp-kit";
 import { ApprovalProgressBar } from "./ApprovalProgressBar";
+import { Member } from "@/hooks/useGetMembers";
 import { CancelTransactionDialog } from "./dialogs/CancelTransactionDialog";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetTransactionDetails } from "@/hooks/useGetTransactionDetails";
@@ -15,12 +16,14 @@ import { useSimulateTransactions } from "@/hooks/useSimulateTransactions";
 
 interface ProposedTransactionsProps {
   transactions: TransactionSummary[];
+  members: Member[];
   batchCancelDigests: string[];
   onToggleBatchCancel: (digest: string) => void;
 }
 
 export default function ProposedTransactions({
   transactions,
+  members,
   batchCancelDigests,
   onToggleBatchCancel,
 }: ProposedTransactionsProps) {
@@ -178,9 +181,9 @@ export default function ProposedTransactions({
                   {/* Progress Bar */}
                   <div className="mb-3">
                     <ApprovalProgressBar
-                      currentApprovals={tx.currentApprovals}
+                      members={members}
+                      approvedBy={tx.approvedBy}
                       threshold={tx.threshold}
-                      totalAccountWeight={tx.totalAccountWeight}
                     />
                   </div>
 
