@@ -3,3 +3,4 @@
 export * from './ThemeContext';
 export * from './IsafeIndexerClientContext';
 export * from './TxServiceClientContext';
+export * from './AddressBookContext';

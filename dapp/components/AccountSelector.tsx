@@ -9,6 +9,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import Image from "next/image";
 import { redirect, usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import { shortenAddress } from "@/lib/utils/shortenAddress";
 
 export function AccountSelector(){
     const {isafeAccount, toggleAccount } = useISafeAccount();
@@ -18,6 +20,7 @@ export function AccountSelector(){
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
+    const { getName } = useAddressBookContext();
 
     const pathname = usePathname();
 
@@ -88,7 +91,7 @@ export function AccountSelector(){
                                 height={28}
                                 className="rounded-full flex-shrink-0"
                             />
-                            {`${isafeAccount.substring(0, 6)}...${isafeAccount.substring(isafeAccount.length - 4)}`}
+                            {getName(isafeAccount) || shortenAddress(isafeAccount)}
                         </>
                     ) :  accounts.length === 0 ? (
                         "No iSafe Accounts Found"
@@ -157,7 +160,7 @@ export function AccountSelector(){
                                         className="rounded-full flex-shrink-0"
                                     />
                                     <span className="truncate font-mono text-xs">
-                                        {account.substring(0, 8)}...{account.substring(account.length - 6)}
+                                        {getName(account) || shortenAddress(account)}
                                     </span>
                                 </div>
                                 {isafeAccount === account && (

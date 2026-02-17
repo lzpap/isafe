@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   useCurrentAccount,
   useIotaClient,
@@ -14,6 +14,8 @@ import { bcs } from "@iota/iota-sdk/bcs";
 import { redirect } from "next/navigation";
 import { useISafeAccount } from "@/providers/ISafeAccountProvider";
 import { normalizeIotaAddress, isValidIotaAddress } from "@iota/iota-sdk/utils";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import { shortenAddress } from "@/lib/utils/shortenAddress";
 
 interface Member {
   address: string;
@@ -30,6 +32,7 @@ export default function Create() {
     useSignAndExecuteTransaction();
   const client = useIotaClient();
   const { isafeAccount, toggleAccount } = useISafeAccount();
+  const { searchByName, getAddressByName, getName } = useAddressBookContext();
 
   const [members, setMembers] = useState<Member[]>([
     { address: currentAccount?.address || "", weight: "1" },
@@ -37,6 +40,21 @@ export default function Create() {
   const [threshold, setThreshold] = useState<string>("1");
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+  const [activeAutocomplete, setActiveAutocomplete] = useState<number | null>(null);
+  const [suggestions, setSuggestions] = useState<Array<{ address: string; name: string }>>([]);
+  const autocompleteRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (activeAutocomplete === null) return;
+    const handler = (e: MouseEvent) => {
+      if (autocompleteRef.current && !autocompleteRef.current.contains(e.target as Node)) {
+        setActiveAutocomplete(null);
+        setSuggestions([]);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [activeAutocomplete]);
 
   const addMember = () => {
     setMembers([...members, { address: "", weight: "1" }]);
@@ -60,10 +78,41 @@ export default function Create() {
     }
   };
 
-  const updateMemberAddress = (index: number, address: string) => {
+  const updateMemberAddress = (index: number, value: string) => {
+    const looksLikeAddress = value.startsWith("0x");
+
+    // If not already a valid address, search address book for name matches
+    if (!looksLikeAddress && value.trim().length > 0) {
+      const matches = searchByName(value);
+      if (matches.length > 0) {
+        setSuggestions(matches);
+        setActiveAutocomplete(index);
+        // Auto-resolve exact name match
+        const exact = getAddressByName(value);
+        if (exact) {
+          setMembers(members.map((m, i) => i === index ? { ...m, address: exact } : m));
+          setSuggestions([]);
+          setActiveAutocomplete(null);
+          return;
+        }
+      } else {
+        setSuggestions([]);
+        setActiveAutocomplete(null);
+      }
+    } else {
+      setSuggestions([]);
+      setActiveAutocomplete(null);
+    }
+
+    setMembers(members.map((m, i) => i === index ? { ...m, address: value } : m));
+  };
+
+  const selectSuggestion = (index: number, address: string) => {
     const newMembers = [...members];
     newMembers[index].address = address;
     setMembers(newMembers);
+    setSuggestions([]);
+    setActiveAutocomplete(null);
   };
 
   const updateMemberWeight = (index: number, weight: string) => {
@@ -178,8 +227,6 @@ export default function Create() {
             const transactionEffects = bcs.TransactionEffects.parse(
               new Uint8Array(Buffer.from(result.effects, "base64"))
             );
-            // TODO: Extract the created account address from the effects, redirect to the account page
-            console.log("Transaction Effects:", transactionEffects);
 
             const eventQueryResult = await client.queryEvents({
                 query: {
@@ -247,17 +294,51 @@ export default function Create() {
             {members.map((member, index) => (
               <div key={index} className="flex gap-2 items-start">
                 <div className="flex-1 space-y-2">
-                  <input
-                    type="text"
-                    value={member.address}
-                    onChange={(e) => updateMemberAddress(index, e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 font-mono text-sm ${
-                      member.address && !isValidIotaAddress(member.address)
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-foreground/20 focus:ring-foreground/50"
-                    }`}
-                    placeholder="0x..."
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={member.address}
+                      onChange={(e) => updateMemberAddress(index, e.target.value)}
+                      onFocus={() => {
+                        if (!member.address.startsWith("0x") && member.address.trim()) {
+                          const matches = searchByName(member.address);
+                          if (matches.length > 0) {
+                            setSuggestions(matches);
+                            setActiveAutocomplete(index);
+                          }
+                        }
+                      }}
+                      className={`w-full px-3 py-2 border rounded-md bg-background focus:outline-none focus:ring-2 font-mono text-sm ${
+                        member.address && !isValidIotaAddress(member.address)
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-foreground/20 focus:ring-foreground/50"
+                      }`}
+                      placeholder="0x... or name from address book"
+                    />
+                    {getName(member.address) && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-blue-400 font-medium pointer-events-none">
+                        {getName(member.address)}
+                      </span>
+                    )}
+                    {activeAutocomplete === index && suggestions.length > 0 && (
+                      <div
+                        ref={autocompleteRef}
+                        className="absolute z-50 top-full left-0 right-0 mt-1 bg-background border border-foreground/20 rounded-lg shadow-xl overflow-hidden"
+                      >
+                        {suggestions.map((s) => (
+                          <button
+                            key={s.address}
+                            type="button"
+                            onClick={() => selectSuggestion(index, s.address)}
+                            className="w-full px-3 py-2 text-left hover:bg-foreground/10 transition cursor-pointer flex items-center justify-between gap-2"
+                          >
+                            <span className="text-sm font-medium text-blue-400">{s.name}</span>
+                            <span className="text-xs text-foreground/40 font-mono">{shortenAddress(s.address)}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input
                     type="number"
                     min="1"

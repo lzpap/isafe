@@ -15,7 +15,7 @@ import {
   TransactionRemovedEvent,
   TransactionApprovalThresholdLostEvent,
 } from "@/lib/bcs/events";
-import { shortenAddress } from "@/lib/utils/shortenAddress";
+import { ResolvedAddress } from "./ResolvedAddress";
 import { toBase58, toBase64 } from "@iota/iota-sdk/utils";
 
 export type EventTypeAccent = {
@@ -286,7 +286,7 @@ export function getEventTypeVisual(eventType: ParsedEvent["eventType"]): EventTy
 
 export const EventItem: React.FC<{ event: ParsedEvent }> = ({ event }) => {
   // Render description and icon based on eventType
-  let description = "";
+  let description: React.ReactNode = "";
   const visual = getEventTypeVisual(event.eventType);
   const icon = visual?.icon;
   const accent: EventTypeAccent = visual?.accent ?? {
@@ -304,42 +304,26 @@ export const EventItem: React.FC<{ event: ParsedEvent }> = ({ event }) => {
         (acc, member) => acc + Number(member.weight),
         0
       );
-      description = `Account ${shortenAddress(
-        accountCreatedData.account
-      )} created (${accountCreatedData.threshold} out of ${total_weight})`;
+      description = <>Account <ResolvedAddress address={accountCreatedData.account} /> created ({accountCreatedData.threshold} out of {total_weight})</>;
       break;
     case "AccountRotatedEvent":
       const accountRotatedData =
         event.data as typeof AccountRotatedEvent.$inferType;
-      description = `Account ${shortenAddress(
-        accountRotatedData.account
-      )} rotated, new authenticator${
-        accountRotatedData.authenticator.package
-      }:: ${accountRotatedData.authenticator.moduleName}::${
-        accountRotatedData.authenticator.functionName
-      }`;
+      description = <>Account <ResolvedAddress address={accountRotatedData.account} /> rotated, new authenticator{accountRotatedData.authenticator.package}:: {accountRotatedData.authenticator.moduleName}::{accountRotatedData.authenticator.functionName}</>;
       break;
     case "MemberAddedEvent":
       const memberAddedData = event.data as typeof MemberAddedEvent.$inferType;
-      description = `Member ${shortenAddress(
-        memberAddedData.member.addr
-      )} added with weight ${memberAddedData.member.weight}`;
+      description = <>Member <ResolvedAddress address={memberAddedData.member.addr} /> added with weight {memberAddedData.member.weight}</>;
       break;
     case "MemberRemovedEvent":
       const memberRemovedData =
         event.data as typeof MemberRemovedEvent.$inferType;
-      description = `Member ${shortenAddress(
-        memberRemovedData.member.addr
-      )} removed`;
+      description = <>Member <ResolvedAddress address={memberRemovedData.member.addr} /> removed</>;
       break;
     case "MemberWeightUpdatedEvent":
       const memberWeightUpdatedData =
         event.data as typeof MemberWeightUpdatedEvent.$inferType;
-      description = `Member ${shortenAddress(
-        memberWeightUpdatedData.member.addr
-      )} weight updated from ${memberWeightUpdatedData.oldWeight} to ${
-        memberWeightUpdatedData.newWeight
-      }`;
+      description = <>Member <ResolvedAddress address={memberWeightUpdatedData.member.addr} /> weight updated from {memberWeightUpdatedData.oldWeight} to {memberWeightUpdatedData.newWeight}</>;
       break;
     case "ThresholdChangedEvent":
       const thresholdChangedData =
@@ -363,7 +347,7 @@ export const EventItem: React.FC<{ event: ParsedEvent }> = ({ event }) => {
       const txDigestBase58 = toBase58(
         new Uint8Array(transactionProposedData.transactionDigest)
       );
-      description = `Transaction ${txDigestBase58.slice(0, 6)}... proposed by ${shortenAddress(transactionProposedData.proposer)}`;
+      description = <>Transaction {txDigestBase58.slice(0, 6)}... proposed by <ResolvedAddress address={transactionProposedData.proposer} /></>;
       break;
     case "TransactionApprovedEvent":
       const transactionApprovedData =
@@ -371,7 +355,7 @@ export const EventItem: React.FC<{ event: ParsedEvent }> = ({ event }) => {
       const txDigestBase58Approved = toBase58(
         new Uint8Array(transactionApprovedData.transactionDigest)
       );
-      description = `Transaction ${txDigestBase58Approved.slice(0, 6)}... approved by ${shortenAddress(transactionApprovedData.approver)}`;
+      description = <>Transaction {txDigestBase58Approved.slice(0, 6)}... approved by <ResolvedAddress address={transactionApprovedData.approver} /></>;
       break;
     case "TransactionApprovalThresholdReachedEvent":
         const txApprovalThresholdData = event.data as typeof TransactionApprovalThresholdReachedEvent.$inferType;

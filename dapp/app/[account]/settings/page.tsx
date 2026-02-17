@@ -17,6 +17,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { generateAvatar } from "@/lib/utils/generateAvatar";
 import { findThresholdCombinations } from "@/lib/utils/findThresholdCombinations";
 import { shortenAddress } from "@/lib/utils/shortenAddress";
+import { ResolvedAddress } from "@/components/ResolvedAddress";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
 import { AllowedAuthenticators } from "@/components/AllowedAuthenticators";
 
 import { ExecuteSettingChangesDialog } from "@/components/dialogs/ExecuteSettingChangesDialog";
@@ -39,6 +41,7 @@ export default function Settings() {
   const iotaClient = useIotaClient();
   const { mutate: signAndExecuteTransaction, isPending } =
     useSignAndExecuteTransaction();
+  const { getName } = useAddressBookContext();
 
   const {
     data: members,
@@ -95,7 +98,7 @@ export default function Settings() {
   const handleRemoveMember = (address: string) => {
     if (
       confirm(
-        `Are you sure you want to remove member ${shortenAddress(address)}?`
+        `Are you sure you want to remove member ${getName(address) || shortenAddress(address)}?`
       )
     ) {
       executeAction({ type: "remove_member", address });
@@ -196,7 +199,7 @@ export default function Settings() {
                           className="font-mono text-sm truncate"
                           title={member.address}
                         >
-                          {shortenAddress(member.address)}
+                          <ResolvedAddress address={member.address} />
                         </p>
                       </div>
                       <span className="bg-foreground/10 px-2 py-0.5 rounded text-xs font-semibold">
@@ -442,7 +445,7 @@ export default function Settings() {
                               key={m.address}
                               className="inline-flex items-center gap-1 bg-foreground/10 px-2 py-0.5 rounded text-xs font-mono"
                             >
-                              {shortenAddress(m.address)}
+                              <ResolvedAddress address={m.address} />
                               <span className="text-foreground/50">
                                 ({m.weight})
                               </span>

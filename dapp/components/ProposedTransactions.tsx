@@ -1,7 +1,7 @@
 "use client";
 
 import { TransactionSummary } from "@/lib/clients/IsafeIndexerClient";
-import { shortenAddress } from "@/lib/utils/shortenAddress";
+import { ResolvedAddress } from "./ResolvedAddress";
 import { formatTimestamp } from "@/lib/utils/formatTimestamp";
 import { useState } from "react";
 import { ProposeTransactionDialog } from "./dialogs/ProposeTransactionDialog";
@@ -164,7 +164,7 @@ export default function ProposedTransactions({
                           Digest: {tx.transactionDigest}
                         </p>
                         <p className="text-sm text-foreground/60">
-                          Proposed by {shortenAddress(tx.proposerAddress)}
+                          Proposed by <ResolvedAddress address={tx.proposerAddress} />
                         </p>
                       </div>
                     </div>

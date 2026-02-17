@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useGetMembers } from "@/hooks/useGetMembers";
 import { CONFIG } from "@/config/config";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import { shortenAddress } from "@/lib/utils/shortenAddress";
 
 interface Member {
   address: string;
@@ -16,6 +18,7 @@ interface MembersProps {
 
 export function Members({ accountAddress, compact = false }: MembersProps) {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
+  const { getName } = useAddressBookContext();
 
   const { data, error, isLoading } = useGetMembers(accountAddress);
 
@@ -98,7 +101,7 @@ export function Members({ accountAddress, compact = false }: MembersProps) {
                       className="font-mono truncate text-foreground/80 hover:text-foreground hover:underline underline-offset-4"
                       title={member.address}
                     >
-                      {member.address.substring(0, 8)}...{member.address.substring(member.address.length - 6)}
+                      {getName(member.address) || shortenAddress(member.address)}
                     </a>
                     <button
                       type="button"
@@ -153,7 +156,7 @@ export function Members({ accountAddress, compact = false }: MembersProps) {
                     className="font-mono text-sm truncate hover:underline underline-offset-4"
                     title={member.address}
                   >
-                    {member.address}
+                    {getName(member.address) || member.address}
                   </a>
                   <button
                     type="button"

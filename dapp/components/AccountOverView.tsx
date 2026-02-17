@@ -14,6 +14,7 @@ import { getDefaultNetwork } from "@/config/config";
 import { queryKey } from "@/hooks/queryKey";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
+import { ResolvedAddress } from "./ResolvedAddress";
 
 export function AccountOverView({ isafeAccount }: { isafeAccount: string }) {
   const avatarUrl = generateAvatar(isafeAccount, 80);
@@ -63,7 +64,9 @@ export function AccountOverView({ isafeAccount }: { isafeAccount: string }) {
             alt="Account Avatar"
             className="w-16 h-16 rounded-full shadow-md"
           />
-          <p className="font-mono text-xl break-all leading-relaxed">{isafeAccount}</p>
+          <div>
+            <ResolvedAddress address={isafeAccount} mode="full" className="text-xl break-all leading-relaxed" />
+          </div>
           <button
             onClick={handleCopy}
             className="h-9 w-9 inline-flex items-center justify-center rounded-md border border-foreground/10 hover:border-foreground/20 hover:bg-foreground/10 transition-colors flex-shrink-0"

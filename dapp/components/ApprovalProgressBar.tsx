@@ -1,5 +1,7 @@
 import { Member } from "@/hooks/useGetMembers";
 import { shortenAddress } from "@/lib/utils/shortenAddress";
+import { useAddressBookContext } from "@/contexts/AddressBookContext";
+import { ResolvedAddress } from "./ResolvedAddress";
 
 interface ApprovalProgressBarProps {
   members: Member[];
@@ -12,6 +14,7 @@ export function ApprovalProgressBar({
   approvedBy,
   threshold,
 }: ApprovalProgressBarProps) {
+  const { getName } = useAddressBookContext();
   const totalWeight = members.reduce((sum, m) => sum + m.weight, 0);
   const approvedWeight = members
     .filter((m) => approvedBy.includes(m.address))
@@ -51,7 +54,7 @@ export function ApprovalProgressBar({
                   isApproved ? approvedColor : pendingColor
                 } ${idx < sortedMembers.length - 1 ? "border-r border-background" : ""}`}
                 style={{ width: `${widthPercent}%` }}
-                title={`${shortenAddress(member.address)} — weight: ${member.weight}${isApproved ? " (approved)" : " (pending)"}`}
+                title={`${getName(member.address) || shortenAddress(member.address)} — weight: ${member.weight}${isApproved ? " (approved)" : " (pending)"}`}
               />
             );
           })}
@@ -75,13 +78,12 @@ export function ApprovalProgressBar({
               className="text-center overflow-hidden"
               style={{ width: `${widthPercent}%` }}
             >
-              <span
-                className={`text-xs truncate block ${
+              <ResolvedAddress
+                address={member.address}
+                className={`text-xs ${
                   isApproved ? "text-foreground/70" : "text-foreground/40"
                 }`}
-              >
-                {shortenAddress(member.address)}
-              </span>
+              />
             </div>
           );
         })}

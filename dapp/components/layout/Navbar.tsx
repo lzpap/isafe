@@ -81,6 +81,23 @@ export function Navbar() {
                 )}
             </div>
             <div className="flex items-center gap-4">
+                <Link
+                    href="/address-book"
+                    className={clsx(
+                        'flex items-center gap-1.5 px-3 py-2 rounded-md transition',
+                        pathname === '/address-book'
+                            ? 'bg-foreground text-background'
+                            : 'text-foreground/60 hover:text-foreground hover:bg-foreground/10'
+                    )}
+                    title="Address Book"
+                >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                        <rect x="2" y="3" width="20" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 3v18" />
+                    </svg>
+                    <span className="text-sm font-medium">My Address Book</span>
+                </Link>
                 {connectionStatus=='connected' && <div className="w-48">
                     <AccountSelector />
                 </div>}

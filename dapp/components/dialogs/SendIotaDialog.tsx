@@ -10,7 +10,7 @@ import { bcs } from "@iota/iota-sdk/bcs";
 import { useSignAndExecuteTransaction } from "@iota/dapp-kit";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatIotaBalance } from "@/lib/utils/formatIotaBalance";
-import { useTxServiceClientContext } from "@/contexts";
+import { useTxServiceClientContext, useAddressBookContext } from "@/contexts";
 
 interface SendIotaDialogProps {
   accountAddress: string;
@@ -37,6 +37,7 @@ export function SendIotaDialog({
   const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const queryClient = useQueryClient();
   const txServiceClient = useTxServiceClientContext();
+  const { getName } = useAddressBookContext();
 
   // Validation
   const isAddressValid = targetAddress === "" || isValidIotaAddress(targetAddress);
@@ -424,7 +425,7 @@ export function SendIotaDialog({
         </div>
         <div className="p-8 space-y-8">
           <div className="text-sm text-foreground/60 mb-4">
-            Sending {amount} IOTA to {targetAddress.slice(0, 10)}...{targetAddress.slice(-8)}
+            Sending {amount} IOTA to {getName(targetAddress) || `${targetAddress.slice(0, 10)}...${targetAddress.slice(-8)}`}
           </div>
           <ol className="space-y-4">
             {steps
