@@ -99,7 +99,7 @@ export function DeleteAccountDialog({
     // View call to get the Transactions struct
     const data = await iotaClient.view({
       functionName: `${CONFIG.packageId}::dynamic_auth::transactions`,
-      arguments: [accountAddress],
+      callArgs: [accountAddress],
     });
 
     if ("executionError" in data) {
