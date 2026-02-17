@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ObjectRef, Transaction } from "@iota/iota-sdk/transactions";
 import { fromBase58, toBase64 } from "@iota/iota-sdk/utils";
 import { useIotaClient, useSignAndExecuteTransaction } from "@iota/dapp-kit";
@@ -28,10 +28,11 @@ export function CancelTransactionDialog({
   const [success, setSuccess] = useState(false);
   const [proposedTxDigest, setProposedTxDigest] = useState<string | null>(null);
   const iotaClient = useIotaClient();
-  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const { mutateAsync: signAndExecuteTransaction } = useSignAndExecuteTransaction();
   const { isafeAccount } = useISafeAccount();
   const txServiceClient = useTxServiceClientContext();
   const queryClient = useQueryClient();
+  const hasStarted = useRef(false);
 
   async function prepareCancellationTx(): Promise<Transaction> {
     const tx = new Transaction();
@@ -103,44 +104,34 @@ export function CancelTransactionDialog({
       ],
     });
 
-    signAndExecuteTransaction(
-      { transaction: proposingTx, waitForTransaction: true },
-      {
-        onSuccess: () => {
-          setStep(4);
-          setSuccess(true);
-        },
-        onError: (err) => {
-          throw new Error(`Transaction failed: ${err.message}`);
-        },
-      }
-    );
+    await signAndExecuteTransaction({
+      transaction: proposingTx,
+      waitForTransaction: true,
+    });
+    setStep(4);
+    setSuccess(true);
     return toBeProposedTxDigest;
   }
 
   useEffect(() => {
-    let cancelled = false;
+    if (hasStarted.current) return;
+    hasStarted.current = true;
+
     async function runSteps() {
       setStep(1);
       try {
         const tx = await prepareCancellationTx();
-        if (cancelled) return;
         setStep(2);
         const finalTx = await selectGas(tx);
-        if (cancelled) return;
         setStep(3);
         const digest = await proposeCancellation(finalTx);
         setProposedTxDigest(digest);
-        if (cancelled) return;
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
         setStep(5);
       }
     }
     runSteps();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const steps = [

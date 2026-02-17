@@ -52,12 +52,11 @@ export default function ProposedTransactions({
     data ? data.map((d) => d.bcs) : []
   );
 
-  if (isLoading) {
-    return <div>Loading transactions...</div>;
-  }
-
   return (
     <>
+      {isLoading ? (
+        <div>Loading transactions...</div>
+      ) : (
       <div className="bg-foreground/5 rounded-xl p-6 border border-foreground/10">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -293,6 +292,7 @@ export default function ProposedTransactions({
           </div>
         )}
       </div>
+      )}
       {proposeDialogName && (
         <ProposeTransactionDialog
           name={proposeDialogName}

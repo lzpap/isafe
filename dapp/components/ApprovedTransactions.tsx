@@ -50,12 +50,11 @@ export default function ApprovedTransactions({
     data ? data.map((d) => d.bcs) : []
   );
 
-  if (isLoading) {
-    return <div>Loading transactions...</div>;
-  }
-
   return (
     <>
+      {isLoading ? (
+        <div>Loading transactions...</div>
+      ) : (
       <div className="bg-foreground/5 rounded-xl p-6 border border-foreground/10">
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <svg
@@ -257,6 +256,7 @@ export default function ApprovedTransactions({
           </div>
         )}
       </div>
+      )}
       {approveTxDigestDialog && (
         <ApproveTransactionDialog
           transactionDigest={approveTxDigestDialog}
