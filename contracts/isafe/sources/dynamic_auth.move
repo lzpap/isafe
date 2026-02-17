@@ -7,7 +7,8 @@ use iota::package_metadata::PackageMetadataV1;
 use isafe::account::{
     Account,
     ensure_tx_sender_is_account,
-    rotate_auth_function_v1
+    rotate_auth_function_v1,
+    unsafe_remove_allowed_authenticator
 };
 use isafe::members::{Self, Members, Member};
 use isafe::transactions::{Self, Transactions, add_approval};
@@ -280,6 +281,7 @@ public fun destroy_account_data(self: &mut Account, ctx: &mut TxContext) {
     if (dynamic_field::exists_(self.borrow_id(), guardian_key())) {
         let _guardian: vector<u8> = self.remove_dynamic_field(guardian_key(), AppKey {});
     };
+    unsafe_remove_allowed_authenticator(self, AppKey {}, ctx);
 }
 
 // --------------------------------------- Authenticator ---------------------------------------
@@ -424,6 +426,22 @@ public fun remove_transaction(
     });
 }
 
+/// Removes the currently executed transaction.
+public fun remove_current_transaction(
+    self: &mut Account,
+    ctx: &mut TxContext,
+) {
+    // Check that the sender of this transaction is the account.
+    ensure_tx_sender_is_account(self, ctx);
+
+    // Remove the transaction.
+    transactions_mut(self).remove(*ctx.digest()); 
+
+    emit(TransactionRemovedEvent {
+        account: self.get_address(),
+        transaction_digest: *ctx.digest(),
+    });
+}
 // -------------------------------- Account Builder --------------------------------
 
 // Hot potato pattern for building a new account.

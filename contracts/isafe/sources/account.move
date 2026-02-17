@@ -7,6 +7,7 @@ use iota::table::{Table, new as new_table};
 use std::ascii::String;
 use std::type_name::{get, into_string};
 use iota::account;
+use iota::object::delete;
 
 // ---------------------------------------- Errors ----------------------------------------
 
@@ -19,6 +20,8 @@ const EAllowedAuthenticatorsEmpty: vector<u8> =
     b"Allowed authenticators list can not be empty, at least one app key must be authorized.";
 #[error(code = 3)]
 const ENoAuthenticatorAttached: vector<u8> = b"Account does not have an authenticator attached.";
+#[error(code = 4)]
+const ENonEmptyAuthenticator: vector<u8> = b"Account deletion is failed as there is still an authenticator defined.";
 
 // ---------------------------------------- Account ----------------------------------------
 
@@ -87,7 +90,26 @@ public fun borrow_account_from_ticket_mut(ticket: &mut AccountTicket): &mut Acco
 
 // ---------------------------------------- Account Deletion ----------------------------------------
 
-// Currently there is no way to delete an account.
+/// Delete the account permanently. All data under the account will be deleted and cannot be recovered.
+/// Aborts if:
+/// - the transaction sender is not the account itself.
+/// - there is still an authenticator attached to the account. Please make sure to remove the authenticator before deleting the account.
+/// - there are still allowed authenticators attached to the account. Please make sure to remove all allowed authenticators before deleting the account.
+/// 
+/// ATTENTION: Any assets owned by the object that are not transfered out before deletion will be lost forever. Please make sure to transfer out all assets before calling this function.
+public fun delete_account(account: Account, ctx: &mut TxContext) {
+    // only the account itself can delete the account
+    ensure_tx_sender_is_account(&account, ctx);
+
+    assert!(has_auth_function_ref_v1(&account.id), ENonEmptyAuthenticator);
+
+    let Account { id: account_id, allowed_authenticators } = account;
+
+    delete(account_id);
+
+    // fails if it is not empty
+    allowed_authenticators.destroy_empty(); 
+}
 
 // -------------------------------- Allowed Authenticators Management --------------------------------
 
@@ -114,6 +136,19 @@ public fun remove_allowed_authenticator<T: drop>(
     let app_key_type = get<T>().into_string();
     // TODO: check if authenticator of this type is attached to the account? If yes, prevent removal.
     assert!(self.allowed_authenticators.length() == 1, EAllowedAuthenticatorsEmpty); // prevent removing the last authenticator
+    self.allowed_authenticators.remove(app_key_type);
+}
+
+// shall only be called before deletion of the account to prevent the account from being locked without an authenticator.
+public fun unsafe_remove_allowed_authenticator<T: drop>(
+    self: &mut Account,
+    _app_key: T,
+    ctx: &mut TxContext,
+) {
+    // only the account itself can remove allowed authenticators
+    ensure_tx_sender_is_account(self, ctx);
+
+    let app_key_type = get<T>().into_string();
     self.allowed_authenticators.remove(app_key_type);
 }
 
