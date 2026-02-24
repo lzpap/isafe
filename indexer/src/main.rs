@@ -49,6 +49,15 @@ enum Command {
         /// The port to run the API server on.
         #[arg(long, default_value_t = 3030)]
         api_port: u16,
+        /// Max page size for accounts endpoint.
+        #[arg(long, default_value_t = 20)]
+        page_size_accounts: u32,
+        /// Max page size for transactions endpoint.
+        #[arg(long, default_value_t = 50)]
+        page_size_transactions: u32,
+        /// Max page size for events endpoint.
+        #[arg(long, default_value_t = 50)]
+        page_size_events: u32,
     },
 }
 
@@ -61,6 +70,9 @@ impl Command {
                 checkpoint_url,
                 num_workers,
                 api_port,
+                page_size_accounts,
+                page_size_transactions,
+                page_size_events,
             } => {
                 info!("Starting iSafe Indexer");
 
@@ -77,7 +89,17 @@ impl Command {
                 // Spawn the auction API server
                 let handle = cancel_token.clone();
                 let database_pool = connection_pool.clone();
-                tasks.spawn(async move { start_api_server(database_pool, api_port, handle).await });
+                tasks.spawn(async move {
+                    start_api_server(
+                        database_pool,
+                        api_port,
+                        page_size_accounts,
+                        page_size_transactions,
+                        page_size_events,
+                        handle,
+                    )
+                    .await
+                });
 
                 // spawn the main isafe reader worker
                 let isafe_config = IsafeIndexerConfig::from_env().unwrap_or_default();

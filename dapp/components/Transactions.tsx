@@ -24,7 +24,7 @@ export default function Transactions({accountAddress}: {accountAddress: string})
   const { data: members = [] } = useGetMembers(accountAddress);
 
   // Fetch transactions data here
-  const { data: transactionsData } = useGetSortedAccountTransactions(accountAddress);
+  const { data: transactionsData, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetSortedAccountTransactions(accountAddress);
 
   // Mark current tab's transactions as seen when tab or data changes
   useEffect(() => {
@@ -164,6 +164,19 @@ export default function Transactions({accountAddress}: {accountAddress: string})
       <div className={activeTab !== "rejected" ? "hidden" : undefined}>
         <RejectedTransactions transactions={transactionsData?.rejected || []} />
       </div>
+
+      {/* Load More Transactions */}
+      {hasNextPage && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="px-4 py-2 text-sm font-medium bg-foreground/10 hover:bg-foreground/15 text-foreground rounded-lg transition disabled:opacity-50"
+          >
+            {isFetchingNextPage ? "Loading..." : "Load More Transactions"}
+          </button>
+        </div>
+      )}
 
       {showBatchDialog && (
         <BatchCancelTransactionDialog
