@@ -22,14 +22,14 @@ export class IsafeIndexerClient {
     this.baseUrl = baseUrl;
   }
 
-  // TODO: Paginated indexer queries
-
-  async getAccountEvents(address: string): Promise<IsafeEvent[]> {
-    const data = (await fetch(`${this.baseUrl}/events/${address}`).then((res) =>
+  async getAccountEvents(address: string, cursor?: string | null): Promise<{ events: IsafeEvent[]; nextCursor: string | null }> {
+    const url = new URL(`${this.baseUrl}/events/${address}`);
+    if (cursor) url.searchParams.set("cursor", cursor);
+    const data = (await fetch(url.toString()).then((res) =>
       res.json()
     )) as GetAccountEventsResponse;
     // Parse and return an array of parsed events
-    return data.events.map((event) => {
+    const events = data.events.map((event) => {
       let parsedEvent = null;
       switch (event.eventType) {
         case "AccountCreatedEvent":
@@ -100,25 +100,27 @@ export class IsafeIndexerClient {
         timestamp: new Date(event.timestamp),
       };
     });
+    return { events, nextCursor: data.nextCursor ?? null };
   }
 
-  async getAccountsForAddress(address: string): Promise<string[]> {
-    const data = (await fetch(
-      `${this.baseUrl}/accounts/${address}`
-    ).then((res) => res.json())) as GetAccountsForAddressResponse;
-    return data.accounts;
+  async getAccountsForAddress(address: string, cursor?: string | null): Promise<{ accounts: string[]; nextCursor: string | null }> {
+    const url = new URL(`${this.baseUrl}/accounts/${address}`);
+    if (cursor) url.searchParams.set("cursor", cursor);
+    const data = (await fetch(url.toString()).then((res) => res.json())) as GetAccountsForAddressResponse;
+    return { accounts: data.accounts, nextCursor: data.nextCursor ?? null };
   }
 
-  async getAccountTransactions(accountId: string): Promise<TransactionSummary[]> {
-    const data = (await fetch(
-      `${this.baseUrl}/transactions/${accountId}`
-    ).then((res) => res.json())) as GetTransactionsForAccountResponse;
-    return data.transactions;
+  async getAccountTransactions(accountId: string, cursor?: string | null): Promise<{ transactions: TransactionSummary[]; nextCursor: string | null }> {
+    const url = new URL(`${this.baseUrl}/transactions/${accountId}`);
+    if (cursor) url.searchParams.set("cursor", cursor);
+    const data = (await fetch(url.toString()).then((res) => res.json())) as GetTransactionsForAccountResponse;
+    return { transactions: data.transactions, nextCursor: data.nextCursor ?? null };
   }
 }
 
 export type GetTransactionsForAccountResponse = {
     transactions: TransactionSummary[];
+    nextCursor: string | null;
 }
 
 export type TransactionSummary = {
@@ -134,10 +136,12 @@ export type TransactionSummary = {
 
 export type GetAccountsForAddressResponse = {
     accounts: string[];
-} 
+    nextCursor: string | null;
+}
 
 export type GetAccountEventsResponse = {
   events: RawEvent[];
+  nextCursor: string | null;
 };
 
 export type RawEvent = {

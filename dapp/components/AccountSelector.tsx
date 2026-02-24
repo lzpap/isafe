@@ -16,7 +16,7 @@ export function AccountSelector(){
     const {isafeAccount, toggleAccount } = useISafeAccount();
     const { currentWallet, connectionStatus } = useCurrentWallet();
     const selectedWalletAccount = useCurrentAccount();
-    const { data: accounts } = useGetAccountsForAddress(selectedWalletAccount?.address || "");
+    const { data: accounts, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetAccountsForAddress(selectedWalletAccount?.address || "");
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
@@ -172,6 +172,17 @@ export function AccountSelector(){
                         </button>
                     ))}
                     
+                    {/* Load More Accounts */}
+                    {hasNextPage && (
+                        <button
+                            onClick={() => fetchNextPage()}
+                            disabled={isFetchingNextPage}
+                            className="w-full px-4 py-2 text-center text-sm font-medium text-foreground/60 hover:bg-foreground/5 transition disabled:opacity-50"
+                        >
+                            {isFetchingNextPage ? "Loading..." : "Load More"}
+                        </button>
+                    )}
+
                     {/* Create New Account Option - Always visible */}
                     <button
                         onClick={() => {

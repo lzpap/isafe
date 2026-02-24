@@ -96,10 +96,15 @@ pub fn delete_member_from_account(
 pub fn get_accounts_for_member(
     conn: &mut SqliteConnection,
     member: &IotaAddress,
+    offset: i64,
+    limit: i64,
 ) -> Result<Vec<IotaAddress>> {
     let results = members::table
         .filter(members::member_address.eq(member.to_string()))
         .select(members::account_address)
+        .order(members::added_at.asc())
+        .offset(offset)
+        .limit(limit)
         .load::<String>(conn)?;
 
     let accounts = results
@@ -157,6 +162,8 @@ pub fn get_transaction_approval_details(
 pub fn get_transactions_for_account(
     conn: &mut SqliteConnection,
     account: &IotaAddress,
+    offset: i64,
+    limit: i64,
 ) -> Result<Vec<TransactionSummary>> {
     // Use a transaction to ensure atomic reads across multiple tables
     conn.transaction(|conn| {
@@ -175,9 +182,12 @@ pub fn get_transactions_for_account(
             .first::<Option<i64>>(conn)?
             .unwrap_or(0);
 
-        // 3. Get all transactions for this account
+        // 3. Get all transactions for this account (paginated)
         let stored_transactions = transactions::table
             .filter(transactions::account_address.eq(&account_str))
+            .order(transactions::created_at.desc())
+            .offset(offset)
+            .limit(limit)
             .load::<models::StoredTransaction>(conn)?;
 
         // 4. For each transaction, get its approvals and build the summary
@@ -448,10 +458,14 @@ pub fn insert_event_entry(
 pub fn get_events_for_account(
     conn: &mut SqliteConnection,
     account: &IotaAddress,
+    offset: i64,
+    limit: i64,
 ) -> Result<Vec<models::StoredEvent>> {
     let results = events::table
         .filter(events::account_address.eq(account.to_string()))
         .order(events::timestamp.desc())
+        .offset(offset)
+        .limit(limit)
         .load::<models::StoredEvent>(conn)?;
 
     Ok(results)

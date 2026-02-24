@@ -71,7 +71,7 @@ export function AccountActivity({ accountAddress }: AccountActivityProps) {
         };
     }, [isFilterOpen]);
 
-    const { data: events, isPending, isError, error } = useGetAccountEvents(accountAddress);
+    const { data: events, isPending, isError, error, fetchNextPage, hasNextPage, isFetchingNextPage } = useGetAccountEvents(accountAddress);
 
     const filteredEvents = selectedFilters.size > 0
         ? ( events ?? []).filter(event => selectedFilters.has(event.eventType))
@@ -178,9 +178,22 @@ export function AccountActivity({ accountAddress }: AccountActivityProps) {
 
             <div className="scrollbar-theme space-y-2 h-72 overflow-y-scroll pr-1">
                 {sortedEvents && sortedEvents.length > 0 ? (
-                    sortedEvents.map((event) => (
-                        <EventItem key={event.firedInTx+event.eventType+event.timestamp.getMilliseconds()} event={event} />
-                    ))
+                    <>
+                        {sortedEvents.map((event) => (
+                            <EventItem key={event.firedInTx+event.eventType+event.timestamp.getMilliseconds()} event={event} />
+                        ))}
+                        {hasNextPage && (
+                            <div className="flex justify-center py-2">
+                                <button
+                                    onClick={() => fetchNextPage()}
+                                    disabled={isFetchingNextPage}
+                                    className="px-4 py-2 text-sm font-medium bg-foreground/10 hover:bg-foreground/15 text-foreground rounded-lg transition disabled:opacity-50"
+                                >
+                                    {isFetchingNextPage ? "Loading..." : "Load More Events"}
+                                </button>
+                            </div>
+                        )}
+                    </>
                 ) : (
                     <div className="text-center py-8 text-foreground/60">
                         <svg className="w-16 h-16 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,30 +1,37 @@
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { queryKey } from './queryKey';
 import { TransactionSummary } from '@/lib/clients/IsafeIndexerClient';
 import { useIsafeIndexerClientContext } from '@/contexts/IsafeIndexerClientContext';
 
 export function useGetSortedAccountTransactions(accountId: string) {
     const indexerClient = useIsafeIndexerClientContext();
-    return useQuery({
+    const infiniteQuery = useInfiniteQuery({
         queryKey: queryKey.transactions(accountId),
-        queryFn: async () => {
-            // get all transactions from the custom indexer for the account
-            const data = await indexerClient.getAccountTransactions(accountId);
-
-            // sort them into proposed, approved, executed
-            return {
-                proposed: data.filter(tx => tx.status === 'Proposed'),
-                approved: data.filter(tx => tx.status === 'Approved'),
-                executed: data.filter(tx => tx.status === 'Executed'),
-                rejected: data.filter(tx => tx.status === 'Rejected'),
-            };
-        },
+        queryFn: ({ pageParam }) => indexerClient.getAccountTransactions(accountId, pageParam),
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
         enabled: !!accountId,
         staleTime: 1000,
-        // TODO figure out refetching strategy
         refetchInterval: 3000,
         retry: false,
     });
+
+    const allTransactions = infiniteQuery.data?.pages.flatMap(p => p.transactions) ?? [];
+
+    return {
+        data: infiniteQuery.data ? {
+            proposed: allTransactions.filter(tx => tx.status === 'Proposed'),
+            approved: allTransactions.filter(tx => tx.status === 'Approved'),
+            executed: allTransactions.filter(tx => tx.status === 'Executed'),
+            rejected: allTransactions.filter(tx => tx.status === 'Rejected'),
+        } : undefined,
+        isPending: infiniteQuery.isPending,
+        isError: infiniteQuery.isError,
+        error: infiniteQuery.error,
+        fetchNextPage: infiniteQuery.fetchNextPage,
+        hasNextPage: infiniteQuery.hasNextPage,
+        isFetchingNextPage: infiniteQuery.isFetchingNextPage,
+    };
 }
 
 export type SortedTransactions = {
