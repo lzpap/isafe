@@ -89,7 +89,7 @@ async fn main() -> Result<()> {
             Transaction::from_generic_sig_data(
                 data,
                 vec![GenericSignature::MoveAuthenticator(
-                    MoveAuthenticator::new_for_testing(
+                    MoveAuthenticator::new_v1(
                         vec![],
                         vec![],
                         CallArg::Object(iota_types::transaction::ObjectArg::SharedObject {
